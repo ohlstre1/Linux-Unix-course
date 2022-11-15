@@ -1,4 +1,4 @@
-all: # morsecode.c
-	gcc main.c -o exe_morse
+all: 
+	gcc main.c morse.c -o exe_morse
 clean:
 	rm exe_morse

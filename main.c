@@ -8,16 +8,38 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <assert.h>
+#include <ctype.h>
+#include "morse.h"
 
-#define BLOCKSIZE 4096
 
+
+void handle_sigint(int sig){
+    printf("You cannot stop me\n");
+}
 
 
 
 int main(int argc,char **argv) {
     int ifd, ofd;
-    //printf("\nint: %d input: %s output: %s \n",argc ,argv[1],argv[2]);
-    // Quick and dirty command line parsing
+
+    int pipe_fd[2];
+    assert(pipe(pipe_fd) == 0);
+   
+    struct sigaction sa = { 0 };
+    sa.sa_flags = SA_RESTART;
+    sa.sa_handler = &handle_sigint;
+
+    assert((sigaction(SIGINT, &sa, NULL)) == 0); 
+    
+    sleep(5);
+
+    FILE *log_file;
+    log_file  = fopen(".log", "w");
+    fprintf(log_file, "Starting program\n");
+    
+    
     if (argc == 2) { // Only input file, output stdout
         
         ofd = STDOUT_FILENO;
@@ -28,6 +50,7 @@ int main(int argc,char **argv) {
             ifd = open(argv[1],O_RDONLY);
             if (ifd < 0) {
                 fprintf(stderr,"Opening input file failed\n");
+                fprintf(log_file, "Opening input file failed\n");
                 return -1;
             }
         }
@@ -38,6 +61,7 @@ int main(int argc,char **argv) {
             ifd = open(argv[1],O_RDONLY);
             if (ifd < 0) {
                 fprintf(stderr,"Opening input file failed\n");
+                fprintf(log_file, "Opening input file failed\n");
                 return -1;
             }
         }
@@ -47,34 +71,81 @@ int main(int argc,char **argv) {
             ofd = open(argv[2],O_WRONLY|O_CREAT|O_TRUNC,0666);
             if (ofd < 0) {
                 fprintf(stderr,"Creating output file failed\n");
+                fprintf(log_file, "Creating output file failed\n");
                 return -1;
             }
         }
     } else {
         fprintf(stderr,"Usage: %s [input|-] [output|-]\n",argv[0]);
+        fprintf(log_file, "Need input and output files");
         return -1;
     }
-
+    
     // Allocate buffer
     char *buf = malloc(BLOCKSIZE);
+    char buff[BLOCKSIZE]; 
+    char *output = malloc(BLOCKSIZE*5);
+    char *output1 = malloc(BLOCKSIZE*5);
     if (buf == NULL) return -1;
-    while (1) {
+
+    int pid = fork();
+    if( pid == -1 ) {
+    fprintf(log_file, "Fork error\n"); return -1;
+    }
+   
+    //child
+    
+    if(pid == 0){
+       
+
+        close(pipe_fd[1]);
+
+        fprintf(log_file,"[Child] Program starting\n");
+        sleep(5);
+        fprintf(log_file,"[Child] Slept for 5 seconds\n");
+
+        
+        if(read(pipe_fd[0], &buff, BLOCKSIZE) == -1){
+            fprintf(log_file, "[Child] Pipe Read Error");
+        }
+        
+        close(pipe_fd[0]);
+        fprintf(log_file, "[Child] Recived following= %s\n",buff);
+        morseDecode(output, buff);
+        fprintf(log_file, "[Child] Decoded following message=\n%s",output);
+        
+        write(ofd,output,strlen(output));
+
+   
+        
+
+    //parrent process
+    }else{
+        
+
+
+        fprintf(log_file,"[Parent] Program starting\n");
+        
+        close(pipe_fd[0]);
         int s;
         s = read(ifd,buf,BLOCKSIZE);
         if (s < 0) return -1;
-        if (s == 0) break; // input closed
-        int r = 0;
-        while (r < s) {
-            int t = write(ofd,buf+r,s-r);
-            if (t < 0) {
-                return -1;
-            }
-            r += t;
+        fprintf(log_file, "[Parent] Before encoding=\n%s",buf);
+        morseEncode(output1, buf);
+        fprintf(log_file, "[Parent] After encoding=\n%s",buf);
+        if( write(pipe_fd[1], buf, BLOCKSIZE) == -1){
+            fprintf(log_file, "[Parent] Pipe Write Error");  
         }
-    }
+        close(pipe_fd[1]);
+
+    }    
+    
+    free(output1);
+    free(output);
     free(buf);
     close(ifd);
     close(ofd);
-
+    fclose(log_file);
+    
     return 0;
 }
