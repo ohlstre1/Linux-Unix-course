@@ -1,0 +1,15 @@
+Source: service
+Section: unknown
+Priority: extra
+Maintainer: Risto Järvinen <risto.jarvinen@aalto.fi>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: http://comnet.aalto.fi/
+#Vcs-Git: git://git.debian.org/collab-maint/service.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/service.git;a=summary
+
+Package: service
+Architecture: any
+Depends:
+Description: Signal Service
+ Long and boring explanation of an example program.

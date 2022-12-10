@@ -1,0 +1,22 @@
+.TH SERVICE 1 "November 2012" "Signal Service 0.1"
+.SH NAME
+service \- writes notifications of signals to log file
+.SH SYNOPSIS
+.B service
+.SH DESCRIPTION
+.B service
+waits for signals, specifically SIGUSR1 and SIGUSR2 and
+writes log messages to /tmp/mylog.txt.  This package is
+a demonstrator how to package software.
+.SH OPTIONS
+.\".TP
+.\".B \-R
+.\"Recursively list attributes of directories and their contents.
+.SH AUTHOR
+.B Service
+was written by Risto Järvinen <risto.jarvinen@aalto.fi>.
+.SH BUGS
+Should handle all blockable signals.  Output file should be
+configurable.
+.SH SEE ALSO
+.BR kill (1)

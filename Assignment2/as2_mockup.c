@@ -7,15 +7,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #define BUFSIZE 255
+
+void* routine(){
+    printf("test");
+}
 
 
 int main(int argc,char **argv) {
     // Initialize communication with the bank server? We'll just fake it.
+    
+    phtread_t t1,t2;
+    assert(phtread_create(&t1,NULL, &routine, NULL) != 0 );
+    
+    assert(phtread_create(&t2,NULL, &routine, NULL) != 0);
+    phteard_join(&t1,NULL);
+    phteard_join(&t2,NULL);
+    
+    
     printf("Connecting to the bank, please wait.\n");
-    sleep(5);
+    
+    //sleep(5);
+    
     // Connect successful.
+
+
+
     printf("ready\n");
     int quit = 0;
     char *buf = malloc(BUFSIZE);
